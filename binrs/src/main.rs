@@ -409,6 +409,16 @@ enum Command {
         #[arg(num_args(0..))]
         input: Vec<String>,
     },
+    Tobin {
+        #[arg(short = 'o', long, value_name = "FILE")]
+        output: Option<PathBuf>,
+        #[arg(num_args(0..))]
+        input: Vec<String>,
+    },
+    Frombin {
+        #[arg(value_name = "FILE")]
+        file: PathBuf,
+    },
     Completions {
         #[arg(value_enum)]
         shell: Shell,
@@ -1027,6 +1037,23 @@ fn run() -> Result<(), String> {
                 codec::encode::parse_any_bytes(&text, src_fmt)?
             };
             println!("{}", codec::decode::bytes_to_format(&bytes, to_fmt));
+            Ok(())
+        },
+
+        Command::Tobin { output, input } => {
+            let text = input.join(" ");
+            let bytes = text.as_bytes();
+            let dest = output.unwrap_or_else(|| PathBuf::from("output.bin"));
+            std::fs::write(&dest, bytes)
+                .map_err(|e| format!("failed to write '{}': {}", dest.display(), e))?;
+            eprintln!("wrote {} bytes to {}", bytes.len(), dest.display());
+            Ok(())
+        },
+
+        Command::Frombin { file } => {
+            let bytes = std::fs::read(&file)
+                .map_err(|e| format!("failed to read '{}': {}", file.display(), e))?;
+            print!("{}", codec::decode::decode_text(&bytes));
             Ok(())
         },
 
