@@ -1,23 +1,18 @@
-pub fn binary_to_num (binary: u32) -> u32 {
-    let mut result = 0u32;
-    let mut place = 1u32;
-    let mut n = binary;
-
-    while n > 0 {
-        result += (n % 10) * place;
-        n /= 10;
-        place *= 2;
+pub fn binary_to_byte(s: &str) -> Result<u8, String> {
+    if s.len() != 8 {
+        return Err(format!("expected 8-bit group, got: '{}'", s));
     }
-    result
+    s.chars().try_fold(0u8, |acc, c| match c {
+        '0' => Ok(acc << 1),
+        '1' => Ok((acc << 1) | 1),
+        _   => Err(format!("invalid char: '{}'", c)),
+    })
 }
 
-pub fn ascii_to_str (ascii_values: &[u32]) -> String {
-    ascii_values.iter()
-        .filter_map(|&n| char::from_u32(n))
-        .collect()
-} 
-
-pub fn decode(input: &[u32]) -> String {
-    let ascii_values: Vec<u32> = input.iter().map(|&b| binary_to_num(b)).collect();
-    ascii_to_str(&ascii_values)
+pub fn decode(input: &str) -> Result<String, String> {
+    let bytes: Result<Vec<u8>, _> = input
+        .split_whitespace()
+        .map(binary_to_byte)
+        .collect();
+    String::from_utf8(bytes?).map_err(|e| format!("invalid UTF-8: {}", e))
 }
